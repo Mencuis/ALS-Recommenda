@@ -25,6 +25,9 @@ class MyALS:
         if self.ratings_size != (user_n, item_n):
             print("matrix ratings must be suitable with user_ids and iten_ids")
             raise IndexError
+        if self.rank > item_n:
+            print("rank must less than item number")
+            raise IndexError
 
     def _random_matrix(self):
         np.random.seed(self.seed)
