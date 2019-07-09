@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 import numpy as np
 import random
 
@@ -30,21 +28,25 @@ class MyALS:
 
     def _random_matrix(self):
         np.random.seed(self.seed)
-        self.user_matrix = np.random.rand(self.ratings_size[0], self.rank)
+        self.user_matrix = np.random.rand(self.ratings_size[0], self.rank) 
 
     def _get_rmse(self):
+        """" rmse = sqrt(sum[(ratings - premat)^2]/N) """
         predict_matrix = np.matmul(self.user_matrix, self.item_matrix)
         de = np.array(self.ratings - predict_matrix)
         self.rmse = (sum(sum(de ** 2)) / (self.ratings_size[0] * self.ratings_size[1])) ** 0.5
 
     def _get_item_matrix(self):
+        """ Y = (X^T*X + lambda*I)^-1*X^T*ratings """
         self.item_matrix = np.matmul(
             np.matmul((np.linalg.pinv(np.matmul(self.user_matrix.T, self.user_matrix) + self.lambda_)),
-                      self.user_matrix.T), self.ratings)
+                      self.user_matrix.T), ratings)
 
     def _get_user_matrix(self):
-        self.user_matrix = np.matmul(self.ratings, np.matmul(
-            (np.linalg.pinv(np.matmul(self.item_matrix.T, self.item_matrix) + self.lambda_)), self.item_matrix.T))
+        """ X = ((Y*Y^T + lambda*I)^-1*Y*ratings^T)^T """
+        self.user_matrix = np.matmul(
+            np.matmul((np.linalg.pinv(np.matmul(self.item_matrix, self.item_matrix.T) + self.lambda_)),
+                      self.item_matrix), ratings.T).T
 
     def learn_para(self, rankrange, iterationrange, lambdarange):
         self._preprocess()
@@ -91,7 +93,7 @@ class MyALS:
         t = 0
         for id1 in user_id:
             scores_dict[id1] = dict(zip(self.item_ids, scores_matrix.tolist()[t]))
-            for item in self.item_ids:
+            for item in item_ids:
                 if self.ratings[self.user_dict[id1], self.item_dict[item]] != 0:
                     del scores_dict[id1][item]
             t += 1
@@ -100,38 +102,6 @@ class MyALS:
             recc[id1] = sorted(scores_dict[id1].items(), key=lambda x: x[1], reverse=True)[:n_items]
         return recc
 
-
-def _process_data(self, X):
-    """Transform the item rating data into a sparse matrix.
-
-    Arguments:
-        X {list} -- 2d list with int or float(user_id, item_id, rating)
-
-    Returns:
-        dict -- The items ratings by users. {user_id: {item_id: rating}}
-        dict -- The items ratings by users. {item_id: {user_id: rating}}
-    """
-
-    # Process user ids.
-    self.user_ids = tuple((set(map(lambda x: x[0], X))))
-    self.user_ids_dict = dict(map(lambda x: x[::-1],
-                                  enumerate(self.user_ids)))
-
-    # Process item ids.
-    self.item_ids = tuple((set(map(lambda x: x[1], X))))
-    self.item_ids_dict = dict(map(lambda x: x[::-1],
-                                  enumerate(self.item_ids)))
-
-    # The shape of item rating data matrix.
-    self.shape = (len(self.user_ids), len(self.item_ids))
-
-    # Sparse matrix and its inverse of item rating data.
-    ratings = defaultdict(lambda: defaultdict(int))
-    ratings_T = defaultdict(lambda: defaultdict(int))
-    for row in X:
-        user_id, item_id, rating = row
-        ratings[user_id][item_id] = rating
-        ratings_T[item_id][user_id] = rating
 
 if __name__ == "__main__":
     print("test ALS...")
@@ -142,17 +112,16 @@ if __name__ == "__main__":
                         [2, 0, 5, 1, 0, 0, 3],
                         [5, 3, 2, 1, 3, 5, 0],
                         [1, 2, 3, 4, 5, 3, 2]])
-    """
     #"""
     user_ids = random.sample(range(1, 1000), 300)
     item_ids = random.sample(range(1, 10000), 2000)
     ratings = np.random.randint(0, 5, (300, 2000))
     #"""
-
+    
     model = MyALS(user_ids, item_ids, ratings, rank=10, iterations=5, lambda_=0.1)
     model.fit()
     rec = model.predict(user_ids[:3], 3)
     print(rec)
-    #model = MyALS(user_ids, item_ids, ratings, rank=1)
+    #model = MyALS(user_ids, item_ids, ratings, rank=1, seed=1)
     #para = model.learn_para([1, 100, 10], [5, 20, 5], [0.01, 0.5, 0.04])
     #print(para)
