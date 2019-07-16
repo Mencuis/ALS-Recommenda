@@ -43,13 +43,13 @@ class MyALS:
         """ Y = (X^T*X + lambda*I)^-1*X^T*ratings """
         self.item_matrix = np.matmul(
             np.matmul((np.linalg.pinv(np.matmul(self.user_matrix.T, self.user_matrix) + self.lambda_)),
-                      self.user_matrix.T), ratings)
+                      self.user_matrix.T), self.ratings)
 
     def _get_user_matrix(self):
         """ X = ((Y*Y^T + lambda*I)^-1*Y*ratings^T)^T """
         self.user_matrix = np.matmul(
             np.matmul((np.linalg.pinv(np.matmul(self.item_matrix, self.item_matrix.T) + self.lambda_)),
-                      self.item_matrix), ratings.T).T
+                      self.item_matrix), self.ratings.T).T
 
     def learn_para(self, rankrange, iterationrange, lambdarange):
         self._preprocess()
